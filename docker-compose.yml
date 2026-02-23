@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: djangomap
+      POSTGRES_USER: djangomap
+      POSTGRES_PASSWORD: djangomap
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U djangomap -d djangomap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    entrypoint: ["/bin/bash", "./entrypoint.sh"]
+    volumes:
+      - .:/app
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "django-insecure-dev-key-change-in-production"
+      DB_NAME: djangomap
+      DB_USER: djangomap
+      DB_PASSWORD: djangomap
+      DB_HOST: db
+      DB_PORT: "5432"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
+
+volumes:
+  postgres_data:
+  media_data:

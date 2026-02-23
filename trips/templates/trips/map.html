@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DjangoMap &mdash; Utazásaim</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #f0f2f5;
+    }
+
+    /* ── FEJLÉC ── */
+    header {
+      background: #1a3a5c;
+      color: #fff;
+      padding: 0 1.25rem;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.02em; }
+    header a.admin-link {
+      margin-left: auto;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.8rem;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    header a.admin-link:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* ── FŐ TERÜLET ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── OLDALSÁV ── */
+    .sidebar {
+      width: 270px;
+      min-width: 270px;
+      overflow-y: auto;
+      background: #fff;
+      border-right: 1px solid #d0d5dd;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-title {
+      padding: 0.75rem 1rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #667085;
+      border-bottom: 1px solid #eaecf0;
+    }
+    .sidebar-empty {
+      padding: 1.25rem 1rem;
+      color: #667085;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .sidebar-empty a { color: #2d7dd2; }
+
+    /* ── UTAZÁS BLOKK ── */
+    .trip-block { border-bottom: 2px solid #eaecf0; }
+    .trip-header {
+      background: #f8f9fb;
+      padding: 0.55rem 1rem;
+      cursor: default;
+      border-bottom: 1px solid #eaecf0;
+    }
+    .trip-header-name {
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: #1a3a5c;
+    }
+    .trip-header-dates {
+      font-size: 0.72rem;
+      color: #667085;
+      margin-top: 1px;
+    }
+
+    /* ── HELYSZÍN ELEM ── */
+    .location-item {
+      padding: 0.45rem 1rem 0.45rem 1.4rem;
+      cursor: pointer;
+      border-bottom: 1px solid #f2f4f7;
+      font-size: 0.83rem;
+      color: #344054;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.12s;
+    }
+    .location-item:hover { background: #eef4fb; color: #1a3a5c; }
+    .location-item.active {
+      background: #dbeafe;
+      color: #1e40af;
+      font-weight: 600;
+    }
+    .location-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2d7dd2;
+      flex-shrink: 0;
+    }
+    .location-item.active .location-dot { background: #1e40af; }
+    .location-item-text { flex: 1; }
+
+    /* ── TÉRKÉP ── */
+    #map { flex: 1; }
+
+    /* ── POPUP ── */
+    .lp-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a3a5c;
+      margin-bottom: 2px;
+    }
+    .lp-trip {
+      font-size: 0.72rem;
+      color: #667085;
+      margin-bottom: 6px;
+    }
+    .lp-desc {
+      font-size: 0.82rem;
+      color: #344054;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .lp-photos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .lp-photos img {
+      width: 82px;
+      height: 82px;
+      object-fit: cover;
+      border-radius: 5px;
+      cursor: zoom-in;
+      transition: opacity 0.15s;
+    }
+    .lp-photos img:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+       stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle cx="12" cy="9" r="2.5"/>
+  </svg>
+  <h1>DjangoMap &mdash; Utazásaim</h1>
+  <a href="/admin/" class="admin-link">Admin</a>
+</header>
+
+<div class="main">
+
+  <aside class="sidebar">
+    <div class="sidebar-title">Utazások</div>
+
+    {% if trips %}
+      {% for trip in trips %}
+      <div class="trip-block">
+        <div class="trip-header">
+          <div class="trip-header-name">{{ trip.name }}</div>
+          {% if trip.start_date %}
+          <div class="trip-header-dates">
+            {{ trip.start_date|date:"Y. m. d." }}
+            {% if trip.end_date %}&nbsp;&mdash;&nbsp;{{ trip.end_date|date:"Y. m. d." }}{% endif %}
+          </div>
+          {% endif %}
+        </div>
+
+        {% for location in trip.locations.all %}
+        <div class="location-item"
+             id="loc-{{ location.id }}"
+             onclick="flyToLocation({{ location.id }})">
+          <div class="location-dot"></div>
+          <span class="location-item-text">{{ location.name }}</span>
+        </div>
+        {% empty %}
+        <div style="padding:0.4rem 1rem 0.4rem 1.4rem; font-size:0.78rem; color:#9aa5b4;">
+          Nincs helyszín
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+    {% else %}
+      <div class="sidebar-empty">
+        Még nincsenek utazások.<br>
+        Hozz létre egyet az <a href="/admin/">adminban</a>!
+      </div>
+    {% endif %}
+  </aside>
+
+  <div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const locationsData = {{ locations_json|safe }};
+
+  // ── TÉRKÉP ──
+  const map = L.map('map');
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  if (locationsData.length > 0) {
+    map.fitBounds(locationsData.map(l => [l.lat, l.lng]), { padding: [50, 50] });
+  } else {
+    map.setView([47.5, 19.0], 7);
+  }
+
+  // ── POPUP TARTALOM ──
+  function buildPopup(loc) {
+    let html = `<div class="lp-title">${escHtml(loc.name)}</div>`;
+    html += `<div class="lp-trip">${escHtml(loc.trip_name)}</div>`;
+    if (loc.description) {
+      html += `<div class="lp-desc">${escHtml(loc.description)}</div>`;
+    }
+    if (loc.photos.length > 0) {
+      html += '<div class="lp-photos">';
+      loc.photos.forEach(url => {
+        html += `<img src="${url}" alt="Fotó" onclick="window.open('${url}','_blank')" loading="lazy">`;
+      });
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── MARKEREK ──
+  const markers = {};
+  let activeId = null;
+
+  locationsData.forEach(loc => {
+    const marker = L.marker([loc.lat, loc.lng])
+      .addTo(map)
+      .bindPopup(buildPopup(loc), { maxWidth: 320, minWidth: 200 });
+
+    marker.on('click', () => setActive(loc.id));
+    markers[loc.id] = marker;
+  });
+
+  // ── AKTÍV ELEM ──
+  function setActive(id) {
+    if (activeId !== null) {
+      const prev = document.getElementById(`loc-${activeId}`);
+      if (prev) prev.classList.remove('active');
+    }
+    activeId = id;
+    const el = document.getElementById(`loc-${id}`);
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  // ── REPÜLÉS A HELYSZÍNRE ──
+  function flyToLocation(id) {
+    const marker = markers[id];
+    if (!marker) return;
+    setActive(id);
+    map.flyTo(marker.getLatLng(), 14, { duration: 1.1 });
+    setTimeout(() => marker.openPopup(), 1200);
+  }
+</script>
+
+</body>
+</html>
