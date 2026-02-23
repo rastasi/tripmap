@@ -7,9 +7,9 @@ import os, sys, psycopg2
 try:
     psycopg2.connect(
         host=os.getenv('DB_HOST', 'db'),
-        dbname=os.getenv('DB_NAME', 'djangomap'),
-        user=os.getenv('DB_USER', 'djangomap'),
-        password=os.getenv('DB_PASSWORD', 'djangomap'),
+        dbname=os.getenv('DB_NAME', 'tripmap'),
+        user=os.getenv('DB_USER', 'tripmap'),
+        password=os.getenv('DB_PASSWORD', 'tripmap'),
         port=os.getenv('DB_PORT', '5432')
     ).close()
     sys.exit(0)

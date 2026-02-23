@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="hu">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DjangoMap &mdash; Utazásaim</title>
+  <title>TripMap &mdash; My Trips</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,7 +17,7 @@
       background: #f0f2f5;
     }
 
-    /* ── FEJLÉC ── */
+    /* ── HEADER ── */
     header {
       background: #1a3a5c;
       color: #fff;
@@ -43,14 +43,14 @@
     }
     header a.admin-link:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
-    /* ── FŐ TERÜLET ── */
+    /* ── MAIN AREA ── */
     .main {
       display: flex;
       flex: 1;
       overflow: hidden;
     }
 
-    /* ── OLDALSÁV ── */
+    /* ── SIDEBAR ── */
     .sidebar {
       width: 270px;
       min-width: 270px;
@@ -77,7 +77,7 @@
     }
     .sidebar-empty a { color: #2d7dd2; }
 
-    /* ── UTAZÁS BLOKK ── */
+    /* ── TRIP BLOCK ── */
     .trip-block { border-bottom: 2px solid #eaecf0; }
     .trip-header {
       background: #f8f9fb;
@@ -96,7 +96,7 @@
       margin-top: 1px;
     }
 
-    /* ── HELYSZÍN ELEM ── */
+    /* ── LOCATION ITEM ── */
     .location-item {
       padding: 0.45rem 1rem 0.45rem 1.4rem;
       cursor: pointer;
@@ -124,7 +124,7 @@
     .location-item.active .location-dot { background: #1e40af; }
     .location-item-text { flex: 1; }
 
-    /* ── TÉRKÉP ── */
+    /* ── MAP ── */
     #map { flex: 1; }
 
     /* ── POPUP ── */
@@ -169,14 +169,14 @@
     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
     <circle cx="12" cy="9" r="2.5"/>
   </svg>
-  <h1>DjangoMap &mdash; Utazásaim</h1>
+  <h1>TripMap &mdash; My Trips</h1>
   <a href="/admin/" class="admin-link">Admin</a>
 </header>
 
 <div class="main">
 
   <aside class="sidebar">
-    <div class="sidebar-title">Utazások</div>
+    <div class="sidebar-title">Trips</div>
 
     {% if trips %}
       {% for trip in trips %}
@@ -200,7 +200,7 @@
         </div>
         {% empty %}
         <div style="padding:0.4rem 1rem 0.4rem 1.4rem; font-size:0.78rem; color:#9aa5b4;">
-          Nincs helyszín
+          No locations
         </div>
         {% endfor %}
       </div>
@@ -208,8 +208,8 @@
 
     {% else %}
       <div class="sidebar-empty">
-        Még nincsenek utazások.<br>
-        Hozz létre egyet az <a href="/admin/">adminban</a>!
+        No trips yet.<br>
+        Create one in the <a href="/admin/">admin</a>!
       </div>
     {% endif %}
   </aside>
@@ -222,7 +222,7 @@
 <script>
   const locationsData = {{ locations_json|safe }};
 
-  // ── TÉRKÉP ──
+  // ── MAP ──
   const map = L.map('map');
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -236,7 +236,7 @@
     map.setView([47.5, 19.0], 7);
   }
 
-  // ── POPUP TARTALOM ──
+  // ── POPUP CONTENT ──
   function buildPopup(loc) {
     let html = `<div class="lp-title">${escHtml(loc.name)}</div>`;
     html += `<div class="lp-trip">${escHtml(loc.trip_name)}</div>`;
@@ -246,7 +246,7 @@
     if (loc.photos.length > 0) {
       html += '<div class="lp-photos">';
       loc.photos.forEach(url => {
-        html += `<img src="${url}" alt="Fotó" onclick="window.open('${url}','_blank')" loading="lazy">`;
+        html += `<img src="${url}" alt="Photo" onclick="window.open('${url}','_blank')" loading="lazy">`;
       });
       html += '</div>';
     }
@@ -259,7 +259,7 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // ── MARKEREK ──
+  // ── MARKERS ──
   const markers = {};
   let activeId = null;
 
@@ -272,7 +272,7 @@
     markers[loc.id] = marker;
   });
 
-  // ── AKTÍV ELEM ──
+  // ── ACTIVE ITEM ──
   function setActive(id) {
     if (activeId !== null) {
       const prev = document.getElementById(`loc-${activeId}`);
@@ -286,7 +286,7 @@
     }
   }
 
-  // ── REPÜLÉS A HELYSZÍNRE ──
+  // ── FLY TO LOCATION ──
   function flyToLocation(id) {
     const marker = markers[id];
     if (!marker) return;

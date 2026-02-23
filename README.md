@@ -20,7 +20,7 @@ TripMap is a Django-based web application designed to visualize and manage trave
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/tripmap.git
+    git clone https://github.com/rastasi/tripmap.git
     cd tripmap
     ```
 

@@ -32,7 +32,7 @@ class TripAdmin(admin.ModelAdmin):
 
     def location_count(self, obj):
         return obj.locations.count()
-    location_count.short_description = 'Helyszínek'
+    location_count.short_description = 'Locations'
 
 
 @admin.register(Location)
@@ -55,4 +55,4 @@ class PhotoAdmin(admin.ModelAdmin):
         if obj.image:
             return format_html('<img src="{}" style="max-height:60px;border-radius:4px;">', obj.image.url)
         return '-'
-    thumbnail_preview.short_description = 'Kép'
+    thumbnail_preview.short_description = 'Image'

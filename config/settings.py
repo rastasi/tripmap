@@ -51,9 +51,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.environ.get('DB_NAME', 'djangomap'),
-        'USER': os.environ.get('DB_USER', 'djangomap'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'djangomap'),
+        'NAME': os.environ.get('DB_NAME', 'tripmap'),
+        'USER': os.environ.get('DB_USER', 'tripmap'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'tripmap'),
         'HOST': os.environ.get('DB_HOST', 'db'),
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
@@ -66,8 +66,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-LANGUAGE_CODE = 'hu-hu'
-TIME_ZONE = 'Europe/Budapest'
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 

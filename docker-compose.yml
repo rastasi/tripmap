@@ -2,13 +2,13 @@ services:
   db:
     image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_DB: djangomap
-      POSTGRES_USER: djangomap
-      POSTGRES_PASSWORD: djangomap
+      POSTGRES_DB: tripmap
+      POSTGRES_USER: tripmap
+      POSTGRES_PASSWORD: tripmap
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U djangomap -d djangomap"]
+      test: ["CMD-SHELL", "pg_isready -U tripmap -d tripmap"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,9 +27,9 @@ services:
     environment:
       DEBUG: "True"
       SECRET_KEY: "django-insecure-dev-key-change-in-production"
-      DB_NAME: djangomap
-      DB_USER: djangomap
-      DB_PASSWORD: djangomap
+      DB_NAME: tripmap
+      DB_USER: tripmap
+      DB_PASSWORD: tripmap
       DB_HOST: db
       DB_PORT: "5432"
       ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
