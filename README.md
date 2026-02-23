@@ -60,9 +60,3 @@ TripMap is a Django-based web application designed to visualize and manage trave
 - `Dockerfile`: Defines the Docker image for the Django application.
 - `requirements.txt`: Python dependencies.
 - `manage.py`: Django's command-line utility.
-
-## Contributing
-(Optional section - Add details on how others can contribute)
-
-## License
-(Optional section - Add license information)
