@@ -1,6 +1,8 @@
 from django.contrib.gis import admin
+from django.contrib.gis.db import models as gis_models
 from django.utils.html import format_html
 from .models import Trip, Location, Photo
+from .widgets import LeafletPointWidget
 
 
 class PhotoInline(admin.TabularInline):
@@ -20,6 +22,9 @@ class LocationInline(admin.StackedInline):
     model = Location
     extra = 0
     fields = ['name', 'description', 'point', 'order', 'visited_at']
+    formfield_overrides = {
+        gis_models.PointField: {'widget': LeafletPointWidget},
+    }
 
 
 @admin.register(Trip)
@@ -36,12 +41,15 @@ class TripAdmin(admin.ModelAdmin):
 
 
 @admin.register(Location)
-class LocationAdmin(admin.GISModelAdmin):
+class LocationAdmin(admin.ModelAdmin):
     list_display = ['name', 'trip', 'order', 'visited_at']
     list_filter = ['trip']
     search_fields = ['name', 'description', 'trip__name']
     ordering = ['trip', 'order']
     inlines = [PhotoInline]
+    formfield_overrides = {
+        gis_models.PointField: {'widget': LeafletPointWidget},
+    }
 
 
 @admin.register(Photo)

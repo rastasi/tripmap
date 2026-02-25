@@ -1,0 +1,146 @@
+<style>
+.leaflet-point-widget { position: relative; }
+.leaflet-point-widget .search-wrap { position: relative; margin-bottom: 6px; }
+.leaflet-point-widget .search-wrap input {
+    width: 100%; padding: 8px 12px; border: 1px solid #ccc;
+    border-radius: 4px; font-size: 14px; box-sizing: border-box;
+}
+.leaflet-point-widget .search-results {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: #fff; border: 1px solid #ccc; border-top: none;
+    border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto;
+    z-index: 10000; display: none; box-shadow: 0 4px 8px rgba(0,0,0,.15);
+}
+.leaflet-point-widget .search-results div {
+    padding: 8px 12px; cursor: pointer; font-size: 13px;
+    border-bottom: 1px solid #eee;
+}
+.leaflet-point-widget .search-results div:last-child { border-bottom: none; }
+.leaflet-point-widget .search-results div:hover { background: #f5f5f5; }
+.leaflet-point-widget .map-el {
+    height: 400px; width: 100%; border: 1px solid #ccc; border-radius: 4px;
+}
+.leaflet-point-widget .hint {
+    margin-top: 4px; font-size: 12px; color: #666;
+}
+</style>
+
+<textarea id="{{ module }}" name="{{ name }}" class="vSerializedField" cols="150" rows="10" hidden>{{ serialized }}</textarea>
+
+<div id="{{ module }}_wrap" class="leaflet-point-widget">
+    <div class="search-wrap">
+        <input type="text" id="{{ module }}_search" placeholder="Hely keresése..." autocomplete="off">
+        <div id="{{ module }}_results" class="search-results"></div>
+    </div>
+    <div id="{{ module }}_map" class="map-el"></div>
+    <div class="hint">Kattints a térképre a pont elhelyezéséhez. A jelölőt húzással mozgathatod.</div>
+</div>
+
+<script>
+(function(){
+    function initLeafletWidget(mod) {
+        var ta = document.getElementById(mod);
+        var mapEl = document.getElementById(mod + '_map');
+        var searchInput = document.getElementById(mod + '_search');
+        var resultsEl = document.getElementById(mod + '_results');
+        if (!ta || !mapEl || mapEl._leafletInited) return;
+        if (mod.indexOf('__prefix__') !== -1) return;
+        mapEl._leafletInited = true;
+
+        var center = [47.5, 19.04];
+        var zoom = 6;
+        var marker = null;
+        var val = ta.value.trim();
+
+        function parseEWKT(s) {
+            var m = s.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
+            if (m) return [parseFloat(m[2]), parseFloat(m[1])];
+            return null;
+        }
+
+        if (val) {
+            var parsed = parseEWKT(val);
+            if (parsed) { center = parsed; zoom = 15; }
+        }
+
+        var map = L.map(mapEl).setView(center, zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        function updateValue(latlng) {
+            var lng = Math.round(latlng.lng * 1e6) / 1e6;
+            var lat = Math.round(latlng.lat * 1e6) / 1e6;
+            ta.value = 'SRID=4326;POINT (' + lng + ' ' + lat + ')';
+        }
+
+        function setMarker(latlng) {
+            if (marker) {
+                marker.setLatLng(latlng);
+            } else {
+                marker = L.marker(latlng, {draggable: true}).addTo(map);
+                marker.on('dragend', function(e) { updateValue(e.target.getLatLng()); });
+            }
+            updateValue(latlng);
+        }
+
+        if (val) {
+            var p = parseEWKT(val);
+            if (p) setMarker(L.latLng(p[0], p[1]));
+        }
+
+        map.on('click', function(e) { setMarker(e.latlng); });
+
+        var timer = null;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timer);
+            var q = this.value.trim();
+            if (q.length < 3) { resultsEl.style.display = 'none'; return; }
+            timer = setTimeout(function() {
+                fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&q=' + encodeURIComponent(q))
+                .then(function(r){ return r.json(); })
+                .then(function(data){
+                    resultsEl.innerHTML = '';
+                    if (!data.length) { resultsEl.style.display = 'none'; return; }
+                    data.forEach(function(item){
+                        var d = document.createElement('div');
+                        d.textContent = item.display_name;
+                        d.addEventListener('click', function(){
+                            var ll = L.latLng(parseFloat(item.lat), parseFloat(item.lon));
+                            setMarker(ll);
+                            map.setView(ll, 16);
+                            resultsEl.style.display = 'none';
+                            searchInput.value = '';
+                        });
+                        resultsEl.appendChild(d);
+                    });
+                    resultsEl.style.display = 'block';
+                });
+            }, 300);
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') e.preventDefault();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!resultsEl.contains(e.target) && e.target !== searchInput)
+                resultsEl.style.display = 'none';
+        });
+
+        setTimeout(function(){ map.invalidateSize(); }, 200);
+    }
+
+    initLeafletWidget('{{ module }}');
+
+    if (!window._leafletWidgetListener) {
+        window._leafletWidgetListener = true;
+        document.addEventListener('formset:added', function(e) {
+            setTimeout(function() {
+                var tas = e.target.querySelectorAll('textarea.vSerializedField[hidden]');
+                tas.forEach(function(t){ initLeafletWidget(t.id); });
+            }, 100);
+        });
+    }
+})();
+</script>
